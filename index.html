@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>차곡</title>
 <meta name="theme-color" content="#F4F5F7">
+<meta name="app-version" content="1126-a">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icon-192.png">
 <link rel="manifest" href="manifest.json">
@@ -117,6 +118,10 @@ input[type=date].fld{padding:8px 10px;font-size:14px;width:auto}
 .plan-day{display:flex;flex-direction:column;gap:6px}
 .plan-day .st{display:flex;align-items:center;gap:8px;background:#F7F8FA;border-radius:12px;padding:6px 10px}
 .plan-day .st input{flex:1;border:0;background:transparent;font-size:13px;outline:none;min-width:0;padding:4px 0}
+.upd{position:fixed;left:50%;transform:translateX(-50%);top:calc(12px + env(safe-area-inset-top));z-index:50;background:var(--ink);color:#fff;border-radius:16px;padding:10px 10px 10px 16px;display:flex;align-items:center;gap:10px;font-size:13px;box-shadow:0 8px 24px rgba(22,24,29,.18);width:max-content;max-width:calc(100% - 24px)}
+.upd b{font-weight:700}
+.upd .go{border:0;border-radius:99px;background:#fff;color:var(--ink);font-weight:700;font-size:12px;padding:8px 12px}
+.upd .x{border:0;background:transparent;color:#9A9EA6;padding:4px;display:flex}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 :focus-visible{outline:2px solid var(--deep);outline-offset:2px}
 </style>
@@ -132,6 +137,7 @@ input[type=date].fld{padding:8px 10px;font-size:14px;width:auto}
 </div></div>
 <div id="sheet"></div>
 <div id="toast"></div>
+<div id="upd"></div>
 <script>
 (function () {
 'use strict';
@@ -147,7 +153,7 @@ var FIREBASE_CONFIG = {
 };
 var COLLECTION = 'chagok_users';
 var LS_KEY = 'chagok-v1';
-var APP_VER = '1125-a';
+var APP_VER = (document.querySelector('meta[name=app-version]') || {}).content || 'dev';
 
 /* ---------- 상수 ---------- */
 var PAL = [
@@ -321,7 +327,7 @@ function parseInput(text, base, topics) {
     var parts = line.split(/,|\s그리고\s/).map(function (x) { return x.trim(); }).filter(Boolean);
     var wc = function (x) { return x.split(/\s+/).length; };
     parts.forEach(function (q, i) {
-      if (segs.length && i > 0 && wc(q) <= 2 && !DATEW.test(q)) {
+      if (segs.length && i > 0 && wc(q) <= 2 && !DATEW.test(q) && !DATEW.test(segs[segs.length - 1]) && (wc(segs[segs.length - 1]) === 1 || /,|가서|에서|들러서|들러/.test(segs[segs.length - 1]))) {
         var run = ' ' + segs[segs.length - 1] + ' ';
         for (var j = i; j < parts.length && wc(parts[j]) <= 2 && !DATEW.test(parts[j]); j++) run += ' ' + parts[j] + ' ';
         if (BUYR.test(run)) { segs[segs.length - 1] += ', ' + q; return; }
@@ -692,7 +698,7 @@ function viewTopic() {
   h += '<div class="hero" style="background:' + tp.color + '"><div class="row"><span class="b">' + esc(tp.tpl) + '</span>' +
     (tp.f.prog ? '<span class="num" style="margin-left:auto;font-size:12px">완료 ' + doneN + ' / ' + norm.length + '</span>' : '') +
     '<button data-act="sheet" data-k="topic" data-id="' + tp.id + '" style="' + (tp.f.prog ? '' : 'margin-left:auto;') + 'border:0;background:rgba(255,255,255,.22);color:#fff;border-radius:99px;font-size:12px;font-weight:700;padding:5px 11px">편집</button></div>' +
-    '<div style="font-size:26px;font-weight:800">' + esc(tp.name) + '</div>';
+    '<div><div style="font-size:26px;font-weight:800">' + esc(tp.name) + '</div>' + (tp.desc ? '<div style="font-size:13px;opacity:.9;margin-top:2px">' + esc(tp.desc) + '</div>' : '') + '</div>';
   if (tp.f.prog && norm.length) h += '<div class="prog"><i style="width:' + Math.round(doneN / norm.length * 100) + '%"></i></div>';
   if (tp.f.count && tp.big) h += '<div style="background:rgba(0,0,0,.16);border-radius:14px;padding:12px;display:flex;align-items:center;gap:8px"><div style="flex:1"><div style="font-size:12px;opacity:.85">' + (tp.tpl === '과목' ? '시험일' : '최종 마감') + '</div><div style="font-size:15px;font-weight:700">' + mdw(tp.big) + '</div></div><span class="num" style="background:#fff;color:var(--ink);font-weight:800;font-size:14px;padding:6px 12px;border-radius:99px">' + (diff(td, tp.big) >= 0 ? 'D-' + diff(td, tp.big) : '지남') + '</span></div>';
   else if (tp.f.due && nextDue) h += '<div style="background:rgba(0,0,0,.16);border-radius:14px;padding:12px;display:flex;align-items:center;gap:8px"><div style="flex:1;min-width:0"><div style="font-size:12px;opacity:.85">다음 마감</div><div style="font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(nextDue.title) + ' · ' + mdw(nextDue.due) + '</div></div><span class="num" style="background:#fff;color:var(--ink);font-weight:800;font-size:14px;padding:6px 12px;border-radius:99px">D-' + diff(td, nextDue.due) + '</span></div>';
@@ -884,6 +890,7 @@ function sheetTopic(id) {
   var h = '<div class="row" style="justify-content:space-between;padding-bottom:12px"><b style="font-size:20px">' + (t ? '주제 편집' : '새 주제 만들기') + '</b><span class="sub">주제 수 제한 없음</span></div>';
   h += '<div style="display:flex;flex-direction:column;gap:16px">';
   h += '<label style="display:flex;flex-direction:column;gap:8px"><span style="font-size:13px;font-weight:700">이름</span><input class="fld" data-tf="name" value="' + esc(draft.name) + '" placeholder="예) GSA, 재무관리, 운동"' + (draft.id === LIFE ? ' readonly' : '') + '></label>';
+  h += '<label style="display:flex;flex-direction:column;gap:8px"><span style="font-size:13px;font-weight:700">설명 <span class="sub" style="font-weight:400">선택</span></span><input class="fld" data-tf="desc" value="' + esc(draft.desc || '') + '" placeholder="예) 구글 스튜던트 앰배서더 활동"></label>';
   h += '<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:13px;font-weight:700">색</span><div class="row" style="gap:12px;flex-wrap:wrap">';
   TCOL.forEach(function (c) { h += '<button class="sw' + (draft.color === c ? ' on' : '') + '" style="background:' + c + ';--c:' + c + '" data-act="tColor" data-v="' + c + '" aria-label="색 ' + c + '"></button>'; });
   h += '</div></div>';
@@ -915,12 +922,13 @@ function renderSheet() {
   var k = ui.sheet.k, body = '';
   if (k === 'edit') { var t = taskOf(ui.sheet.id); if (!t) { ui.sheet = null; el.innerHTML = ''; return; } body = sheetEdit(t); }
   else if (k === 'topic') body = sheetTopic(ui.sheet.id);
+  else if (k === 'newtopic') { if (!ui.pending) { ui.sheet = null; el.innerHTML = ''; return; } body = sheetNewTopic(); }
   else body = sheetList(k);
   var keepScroll = el.querySelector('.sheet') ? el.querySelector('.sheet').scrollTop : 0;
-  var act = document.activeElement, focusKey = act && (act.getAttribute('data-ef') || act.getAttribute('data-tf')), pos = act && act.selectionStart;
+  var act = document.activeElement, focusKey = act && (act.getAttribute('data-ef') || act.getAttribute('data-tf') || act.getAttribute('data-nf')), pos = act && act.selectionStart;
   el.innerHTML = '<div class="sheetbg" data-act="bgclose"><div class="sheet" role="dialog" aria-modal="true"><div class="grab"></div>' + body + '</div></div>';
   el.querySelector('.sheet').scrollTop = keepScroll;
-  if (focusKey) { var f = el.querySelector('[data-ef="' + focusKey + '"],[data-tf="' + focusKey + '"]'); if (f && f.type !== 'date') { f.focus(); try { f.setSelectionRange(pos, pos); } catch (e) {} } }
+  if (focusKey) { var f = el.querySelector('[data-ef="' + focusKey + '"],[data-tf="' + focusKey + '"],[data-nf="' + focusKey + '"]'); if (f && f.type !== 'date') { f.focus(); try { f.setSelectionRange(pos, pos); } catch (e) {} } }
 }
 
 /* ---------- 렌더 ---------- */
@@ -960,12 +968,57 @@ function addFromText(text, forcedTopic, baseDate) {
   var base = todayS();
   var res = parseInput(text, base, S.topics);
   if (!res.length) return;
+  /* 처음 보는 주제는 바로 만들지 않고 먼저 물어봄 */
+  var unknown = [];
+  if (!forcedTopic) res.forEach(function (r) {
+    if (r.topic || !r.newTopic) return;
+    var ex = S.topics.filter(function (x) { return x.name.toLowerCase() === r.newTopic.toLowerCase(); })[0];
+    if (ex) { r.topic = ex.id; r.newTopic = null; return; }
+    if (unknown.indexOf(r.newTopic) < 0) unknown.push(r.newTopic);
+  });
+  if (unknown.length) {
+    ui.pending = {text: text, res: res, forced: forcedTopic, base: baseDate, queue: unknown, idx: 0, map: {}};
+    pendDraft();
+    ui.sheet = {k: 'newtopic'};
+    render();
+    return;
+  }
+  finalizeAdd(res, forcedTopic, baseDate, {});
+}
+function pendDraft() {
+  var p = ui.pending, name = p.queue[p.idx];
+  var src = p.res.filter(function (r) { return r.newTopic === name; })[0];
+  var tpl = /(시험|과목|기말|중간|수업|강의|자격증|토익|토플|SQLD|공부)/i.test(name + ' ' + (src ? src.raw : '')) ? '과목' : '프로젝트';
+  p.draft = {name: name, desc: '', tpl: tpl, color: nextColor(), raw: src ? src.raw : name};
+}
+function pendDecide(dec) {
+  var p = ui.pending; if (!p) return;
+  var name = p.queue[p.idx];
+  if (dec === 'create') {
+    var d = p.draft, nm = (d.name || name).trim() || name;
+    var ex = S.topics.filter(function (x) { return x.name.toLowerCase() === nm.toLowerCase(); })[0];
+    if (ex) p.map[name] = ex.id;
+    else { var t = makeTopic(nm, d.tpl); t.color = d.color; t.desc = (d.desc || '').trim(); p.map[name] = t.id; p.created = (p.created || []).concat(nm); }
+  } else if (dec === 'life') p.map[name] = LIFE;
+  else p.map[name] = dec; /* 기존 주제 id */
+  p.idx++;
+  if (p.idx < p.queue.length) { pendDraft(); render(); return; }
+  ui.pending = null; ui.sheet = null;
+  finalizeAdd(p.res, p.forced, p.base, p.map, p.created);
+}
+function pendCancel() {
+  var p = ui.pending; ui.pending = null; ui.sheet = null;
+  if (p) { var qi = document.getElementById('qi'); qi.value = p.text; }
+  render();
+}
+function finalizeAdd(res, forcedTopic, baseDate, map, created) {
+  var base = todayS();
   var before = clone(S), made = [], planCand = null;
   res.forEach(function (r) {
-    var topic = forcedTopic || r.topic;
+    var topic = forcedTopic || r.topic, title = r.title;
     if (!topic && r.newTopic) {
-      var ex = S.topics.filter(function (x) { return x.name.toLowerCase() === r.newTopic.toLowerCase(); })[0];
-      topic = ex ? ex.id : makeTopic(r.newTopic).id;
+      topic = map[r.newTopic] || LIFE;
+      if (topic === LIFE) title = (r.newTopic + ' ' + title).trim();
     }
     var date = r.date;
     if (baseDate && date === base && !r.due) date = baseDate;
@@ -973,19 +1026,43 @@ function addFromText(text, forcedTopic, baseDate) {
       r.items.forEach(function (it) { var t = newTask({title: it, topic: LIFE, shop: true, store: r.store, date: date}); S.tasks.push(t); made.push(t); });
       return;
     }
-    var t = newTask({title: r.title, topic: topic || LIFE, date: date, due: r.due, rep: r.rep});
+    var t = newTask({title: title, topic: topic || LIFE, date: date, due: r.due, rep: r.rep});
     if (r.rep) t.date = baseDate && baseDate > base ? baseDate : base;
     S.tasks.push(t); made.push(t);
     if (t.due && diff(base, t.due) >= 2 && STEP_SETS.some(function (s) { return s[0].test(t.title); })) planCand = t;
   });
   commit();
   var shopN = made.filter(function (t) { return t.shop; }).length, why = [];
-  res.forEach(function (r) { if (r.why.length) why.push(r.why[0]); });
+  if (created && created.length) why.push('‘' + created.join('’, ‘') + '’ 주제 만듦');
+  res.forEach(function (r) { if (r.why.length && !/새 주제/.test(r.why[0])) why.push(r.why[0]); });
   var msg = made.length + '개 추가' + (why.length ? ' · ' + why.slice(0, 2).join(', ') : '');
   if (shopN && shopN === made.length) msg = '살 것 ' + shopN + '개 추가' + (res[0].store ? ' · ' + res[0].store : '');
   var acts = [{label: '되돌리기', fn: function () { S = before; commit('되돌렸어요'); }}];
   if (planCand) acts.unshift({label: '나눌까요?', fn: function () { planNew({title: planCand.title, topic: planCand.topic, due: planCand.due, fromId: planCand.id}); planBuild(); ui.tab = 'plan'; render(); window.scrollTo(0, 0); }});
   toast(msg, acts);
+}
+function sheetNewTopic() {
+  var p = ui.pending, d = p.draft;
+  var h = '<div class="row" style="justify-content:space-between;padding-bottom:4px"><b style="font-size:20px">처음 보는 주제예요</b>' + (p.queue.length > 1 ? '<span class="sub num">' + (p.idx + 1) + ' / ' + p.queue.length + '</span>' : '') + '</div>';
+  h += '<div class="sub" style="padding-bottom:14px">‘' + esc(d.raw) + '’에서 ‘<b style="color:var(--ink)">' + esc(p.queue[p.idx]) + '</b>’를 찾았어요. 새 주제로 등록할까요?</div>';
+  h += '<div style="display:flex;flex-direction:column;gap:16px">';
+  h += '<label style="display:flex;flex-direction:column;gap:8px"><span style="font-size:13px;font-weight:700">주제 이름</span><input class="fld" data-nf="name" value="' + esc(d.name) + '" placeholder="예) GSA"></label>';
+  h += '<label style="display:flex;flex-direction:column;gap:8px"><span style="font-size:13px;font-weight:700">설명 <span class="sub" style="font-weight:400">선택</span></span><input class="fld" data-nf="desc" value="' + esc(d.desc) + '" placeholder="예) 구글 스튜던트 앰배서더 활동"></label>';
+  h += '<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:13px;font-weight:700">종류</span><div class="chips">';
+  ['프로젝트', '과목', '생활'].forEach(function (k) { h += '<button class="pill line' + (d.tpl === k ? ' on' : '') + '" data-act="nTpl" data-v="' + k + '">' + k + '</button>'; });
+  h += '</div></div>';
+  h += '<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:13px;font-weight:700">색</span><div class="row" style="gap:12px;flex-wrap:wrap">';
+  TCOL.forEach(function (c) { h += '<button class="sw' + (d.color === c ? ' on' : '') + '" style="background:' + c + ';--c:' + c + '" data-act="nColor" data-v="' + c + '" aria-label="색 ' + c + '"></button>'; });
+  h += '</div></div>';
+  var others = sortedTopics().filter(function (t) { return t.id !== LIFE; });
+  if (others.length) {
+    h += '<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:13px;font-weight:700">아니면 이미 있는 주제에 넣기</span><div class="chips">';
+    others.forEach(function (t) { h += '<button class="pill line" data-act="nExist" data-id="' + t.id + '"><span class="dot" style="width:7px;height:7px;background:' + t.color + ';margin-right:5px;vertical-align:1px"></span>' + esc(t.name) + '</button>'; });
+    h += '</div></div>';
+  }
+  h += '<div class="row" style="gap:8px"><button class="btn ghost big" style="flex:1" data-act="nLife">그냥 생활에 넣기</button><button class="btn big" style="flex:1.3" data-act="nCreate">주제 만들기</button></div>';
+  h += '<button class="linkbtn" data-act="nCancel">취소하고 다시 쓰기</button></div>';
+  return h;
 }
 
 /* ---------- 이벤트 ---------- */
@@ -1006,7 +1083,13 @@ function closeSheet() { ui.sheet = null; ui.routineOpen = false; render(); }
 document.addEventListener('click', function (e) {
   var el = e.target.closest('[data-act]'); if (!el) return;
   var a = el.getAttribute('data-act'), id = el.getAttribute('data-id'), v = el.getAttribute('data-v'), t;
-  if (a === 'bgclose') { if (e.target === el) closeSheet(); return; }
+  if (a === 'bgclose') { if (e.target === el) { if (ui.pending) pendCancel(); else closeSheet(); } return; }
+  if (a === 'nTpl') { ui.pending.draft.tpl = v; renderSheet(); return; }
+  if (a === 'nColor') { ui.pending.draft.color = v; renderSheet(); return; }
+  if (a === 'nCreate') { pendDecide('create'); return; }
+  if (a === 'nLife') { pendDecide('life'); return; }
+  if (a === 'nExist') { pendDecide(id); return; }
+  if (a === 'nCancel') { pendCancel(); return; }
   if (a === 'close') { closeSheet(); return; }
   if (a === 'tab') { ui.tab = el.getAttribute('data-tab'); ui.sheet = null; render(); window.scrollTo(0, 0); return; }
   if (a === 'tog') {
@@ -1102,7 +1185,7 @@ document.addEventListener('click', function (e) {
     if (a === 'tSave') {
       if (!dr.name.trim()) { toast('이름을 적어주세요'); return; }
       if (dr.id) { var ref0 = topicOf(dr.id); Object.assign(ref0, dr, {name: dr.name.trim()}); }
-      else { var nt = makeTopic(dr.name.trim(), TPL[dr.tpl] ? dr.tpl : '프로젝트'); nt.color = dr.color; nt.tpl = dr.tpl; nt.f = dr.f; nt.big = dr.big; ui.topicSel = nt.id; }
+      else { var nt = makeTopic(dr.name.trim(), TPL[dr.tpl] ? dr.tpl : '프로젝트'); nt.color = dr.color; nt.tpl = dr.tpl; nt.f = dr.f; nt.big = dr.big; nt.desc = (dr.desc || '').trim(); ui.topicSel = nt.id; }
       ui.sheet = null; commit(dr.id ? '저장했어요' : '주제를 만들었어요'); return;
     }
     if (a === 'tDel') {
@@ -1117,6 +1200,7 @@ document.addEventListener('click', function (e) {
 document.addEventListener('input', function (e) {
   var el = e.target;
   if (el.hasAttribute('data-pf')) { ui.plan[el.getAttribute('data-pf')] = el.value; if (el.type === 'date' && ui.plan.steps) { planBuild(); render(); } return; }
+  if (el.hasAttribute('data-nf') && ui.pending) { ui.pending.draft[el.getAttribute('data-nf')] = el.value; return; }
   if (el.hasAttribute('data-step')) { ui.plan.steps[+el.getAttribute('data-step')].t = el.value; return; }
   if (el.hasAttribute('data-tf') && ui.sheet && ui.sheet.draft) { ui.sheet.draft[el.getAttribute('data-tf')] = el.value || null; if (el.getAttribute('data-tf') === 'name') ui.sheet.draft.name = el.value; return; }
 });
@@ -1140,8 +1224,31 @@ document.addEventListener('submit', function (e) {
   commit();
   var ni = document.querySelector('[data-form="cl"] input'); if (ni) ni.focus();
 });
-document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && ui.sheet) closeSheet(); });
+document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && ui.sheet) { if (ui.pending) pendCancel(); else closeSheet(); } });
 document.addEventListener('visibilitychange', function () { if (!document.hidden && S) { var r0 = S.roll; rollover(); if (r0 !== S.roll) render(); } });
+
+/* ---------- 새 버전 알림 ---------- */
+var updSeen = '';
+function checkUpdate() {
+  if (!/^https?:/.test(location.protocol) || APP_VER === 'dev') return;
+  fetch(location.pathname + '?nc=' + Date.now(), {cache: 'no-store'}).then(function (r) { return r.ok ? r.text() : ''; }).then(function (txt) {
+    var m = txt && txt.match(/<meta name="app-version" content="([^"]+)">/);
+    if (!m || m[1] === APP_VER || m[1] === updSeen) return;
+    showUpdate(m[1]);
+  }).catch(function () {});
+}
+function showUpdate(ver) {
+  var el = document.getElementById('upd');
+  el.innerHTML = '<div class="upd" role="status"><span><b>새 버전</b>이 있어요</span><button class="go" data-upd="go">업데이트</button><button class="x" data-upd="later" aria-label="나중에">' + ico('<path d="M6 6l12 12M18 6L6 18"/>', 14) + '</button></div>';
+  el.onclick = function (e) {
+    var b = e.target.closest('[data-upd]'); if (!b) return;
+    if (b.getAttribute('data-upd') === 'go') { flush(); setTimeout(function () { location.replace(location.pathname + '?v=' + encodeURIComponent(ver)); }, 300); }
+    else { updSeen = ver; el.innerHTML = ''; }
+  };
+}
+setInterval(checkUpdate, 5 * 60 * 1000);
+document.addEventListener('visibilitychange', function () { if (!document.hidden) checkUpdate(); });
+setTimeout(checkUpdate, 4000);
 
 /* ---------- 시작 ---------- */
 S = migrate(lsGet() || defState());
