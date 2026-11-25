@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover,interactive-widget=resizes-content">
 <title>차곡</title>
 <meta name="theme-color" content="#F4F5F7">
-<meta name="app-version" content="1126-c">
+<meta name="app-version" content="1126-d">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icon-192.png">
 <link rel="manifest" href="manifest.json">
@@ -1251,6 +1251,17 @@ document.addEventListener('focusin', function (e) {
 document.addEventListener('focusout', function (e) {
   if (e.target.closest && e.target.closest('#bar')) setTimeout(function () { if (!document.activeElement || !document.activeElement.closest || !document.activeElement.closest('#bar')) { document.body.classList.remove('kb'); window.scrollTo(0, 0); fitViewport(); } }, 50);
 });
+/* iOS: 입력칸을 누를 때 페이지를 끌어올리는 기본 동작 막기 — 스크롤 없이 포커스만 */
+(function () {
+  var qi = document.getElementById('qi');
+  function grab(e) {
+    if (document.activeElement === qi) return;
+    e.preventDefault();
+    try { qi.focus({preventScroll: true}); } catch (x) { qi.focus(); }
+  }
+  qi.addEventListener('touchend', grab, {passive: false});
+  qi.addEventListener('mousedown', grab);
+})();
 /* iOS가 페이지 전체를 밀어 올리는 것 되돌리기 */
 window.addEventListener('scroll', function () { if (window.scrollY && !document.querySelector('.sheetbg')) window.scrollTo(0, 0); });
 
