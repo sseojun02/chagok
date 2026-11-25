@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover,interactive-widget=resizes-content">
 <title>차곡</title>
 <meta name="theme-color" content="#F4F5F7">
-<meta name="app-version" content="1126-d">
+<meta name="app-version" content="1126-e">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icon-192.png">
 <link rel="manifest" href="manifest.json">
@@ -98,7 +98,7 @@ button{cursor:pointer}
 .wk div{border-radius:12px;padding:8px 0;display:flex;flex-direction:column;gap:3px;align-items:center}
 .wk div.on{background:var(--ink);color:#fff}
 .sheetbg{position:fixed;left:0;right:0;top:var(--vvt,0px);height:var(--vvh,100dvh);background:rgba(22,24,29,.45);z-index:30;display:flex;align-items:flex-end;justify-content:center}
-.sheet{background:#fff;border-radius:26px 26px 0 0;width:100%;max-width:480px;max-height:88vh;overflow:auto;padding:10px 20px calc(24px + env(safe-area-inset-bottom))}
+.sheet{background:#fff;border-radius:26px 26px 0 0;width:100%;max-width:480px;max-height:calc(var(--vvh,100dvh) - 24px);overscroll-behavior:contain;overflow:auto;padding:10px 20px calc(24px + env(safe-area-inset-bottom))}
 .grab{width:40px;height:4px;border-radius:2px;background:#D9DCE1;margin:0 auto 12px}
 .fl{display:flex;align-items:center;gap:10px;padding:12px 0;border-top:1px solid var(--line2);font-size:14px}
 .fl>label,.fl>.lab{font-size:13px;font-weight:700;width:64px;flex:none}
@@ -1251,19 +1251,27 @@ document.addEventListener('focusin', function (e) {
 document.addEventListener('focusout', function (e) {
   if (e.target.closest && e.target.closest('#bar')) setTimeout(function () { if (!document.activeElement || !document.activeElement.closest || !document.activeElement.closest('#bar')) { document.body.classList.remove('kb'); window.scrollTo(0, 0); fitViewport(); } }, 50);
 });
-/* iOS: 입력칸을 누를 때 페이지를 끌어올리는 기본 동작 막기 — 스크롤 없이 포커스만 */
+/* iOS: 입력칸을 누를 때 페이지 전체를 끌어올리는 기본 동작 막기 — 스크롤 없이 포커스만,
+   그다음 키보드에 가리지 않을 만큼만 그 칸을 살짝 보이게 */
 (function () {
-  var qi = document.getElementById('qi');
-  function grab(e) {
-    if (document.activeElement === qi) return;
-    e.preventDefault();
-    try { qi.focus({preventScroll: true}); } catch (x) { qi.focus(); }
+  function typable(el) { return el && (el.tagName === 'TEXTAREA' || (el.tagName === 'INPUT' && !/^(date|checkbox|radio|button|submit|file|range|color)$/.test(el.type))); }
+  function reveal(el) {
+    [250, 500].forEach(function (ms) { setTimeout(function () { if (document.activeElement === el && el.id !== 'qi') try { el.scrollIntoView({block: 'nearest'}); } catch (x) {} }, ms); });
   }
-  qi.addEventListener('touchend', grab, {passive: false});
-  qi.addEventListener('mousedown', grab);
+  document.addEventListener('touchend', function (e) {
+    var el = e.target;
+    if (!typable(el) || document.activeElement === el) return;
+    e.preventDefault();
+    try { el.focus({preventScroll: true}); } catch (x) { el.focus(); }
+    reveal(el);
+  }, {passive: false, capture: true});
+  document.addEventListener('mousedown', function (e) {
+    var el = e.target;
+    if (e.target.id === 'qi' && document.activeElement !== el) { e.preventDefault(); try { el.focus({preventScroll: true}); } catch (x) { el.focus(); } }
+  });
 })();
 /* iOS가 페이지 전체를 밀어 올리는 것 되돌리기 */
-window.addEventListener('scroll', function () { if (window.scrollY && !document.querySelector('.sheetbg')) window.scrollTo(0, 0); });
+window.addEventListener('scroll', function () { if (window.scrollY) window.scrollTo(0, 0); });
 
 /* ---------- 새 버전 알림 ---------- */
 var updSeen = '';
