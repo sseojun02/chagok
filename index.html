@@ -2,10 +2,10 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <title>차곡</title>
 <meta name="theme-color" content="#F4F5F7">
-<meta name="app-version" content="1126-a">
+<meta name="app-version" content="1126-b">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icon-192.png">
 <link rel="manifest" href="manifest.json">
@@ -122,6 +122,9 @@ input[type=date].fld{padding:8px 10px;font-size:14px;width:auto}
 .upd b{font-weight:700}
 .upd .go{border:0;border-radius:99px;background:#fff;color:var(--ink);font-weight:700;font-size:12px;padding:8px 12px}
 .upd .x{border:0;background:transparent;color:#9A9EA6;padding:4px;display:flex}
+/* iOS: 16px 미만 입력칸을 누르면 화면이 확대되므로 모든 입력칸 16px 이상 */
+input,select,textarea{font-size:16px!important}
+html{-webkit-text-size-adjust:100%}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 :focus-visible{outline:2px solid var(--deep);outline-offset:2px}
 </style>
