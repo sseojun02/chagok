@@ -2,10 +2,10 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover,interactive-widget=resizes-content">
 <title>차곡</title>
 <meta name="theme-color" content="#F4F5F7">
-<meta name="app-version" content="1126-b">
+<meta name="app-version" content="1126-c">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icon-192.png">
 <link rel="manifest" href="manifest.json">
@@ -20,13 +20,14 @@
 <style>
 :root{--soft:#EEF4FB;--faint:#B8CBE0;--deep:#5A7DA3;--ink:#16181D;--ink2:#3A3F4A;--muted:#5F6673;--line:#E9EAEE;--line2:#F0F1F4;--bg:#F4F5F7}
 *{box-sizing:border-box}
-html,body{margin:0;min-height:100%;background:var(--bg)}
+html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none;background:var(--bg)}
 body{font-family:'Noto Sans KR',Inter,system-ui,sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
 button,input,select,textarea{font-family:inherit;color:inherit;font-size:inherit}
 button{cursor:pointer}
 .num{font-family:Inter,'Noto Sans KR',sans-serif}
-.shell{max-width:480px;margin:0 auto;min-height:100vh;min-height:100dvh;position:relative}
-.main{padding:calc(20px + env(safe-area-inset-top)) 16px calc(150px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:12px}
+.shell{position:fixed;left:0;right:0;top:var(--vvt,0px);height:calc(var(--vvh,100dvh) - var(--barh,120px));overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+#app{max-width:480px;margin:0 auto}
+.main{padding:calc(20px + env(safe-area-inset-top)) 16px 24px;display:flex;flex-direction:column;gap:12px}
 .hd{display:flex;align-items:flex-end;justify-content:space-between;padding:8px 4px 4px;gap:10px}
 .hd h1{margin:2px 0 0;font-size:27px;font-weight:800;letter-spacing:-.5px}
 .sub{font-size:12px;color:var(--muted)}
@@ -69,7 +70,7 @@ button{cursor:pointer}
 .shopg h6{margin:4px 0 2px;font-size:11px;color:var(--muted);font-weight:700}
 .shopi{display:flex;align-items:center;gap:10px;padding:5px 0;font-size:13px}
 .shopi.done span{text-decoration:line-through;color:#9A9EA6}
-.bar{position:fixed;left:0;right:0;bottom:0;z-index:10;background:#fff;border-top:1px solid #E6E8EB;padding:10px 12px calc(10px + env(safe-area-inset-bottom))}
+.bar{position:fixed;left:0;right:0;top:calc(var(--vvt,0px) + var(--vvh,100dvh) - var(--barh,120px));z-index:10;background:#fff;border-top:1px solid #E6E8EB;padding:10px 12px calc(10px + env(safe-area-inset-bottom))}
 .bar .in{max-width:456px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
 .inp{display:flex;align-items:center;gap:8px;background:#F2F3F5;border-radius:14px;padding:4px 4px 4px 12px}
 .inp input{flex:1;border:0;background:transparent;font-size:15px;outline:none;min-width:0;padding:8px 0}
@@ -96,7 +97,7 @@ button{cursor:pointer}
 .wk{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;text-align:center}
 .wk div{border-radius:12px;padding:8px 0;display:flex;flex-direction:column;gap:3px;align-items:center}
 .wk div.on{background:var(--ink);color:#fff}
-.sheetbg{position:fixed;inset:0;background:rgba(22,24,29,.45);z-index:30;display:flex;align-items:flex-end;justify-content:center}
+.sheetbg{position:fixed;left:0;right:0;top:var(--vvt,0px);height:var(--vvh,100dvh);background:rgba(22,24,29,.45);z-index:30;display:flex;align-items:flex-end;justify-content:center}
 .sheet{background:#fff;border-radius:26px 26px 0 0;width:100%;max-width:480px;max-height:88vh;overflow:auto;padding:10px 20px calc(24px + env(safe-area-inset-bottom))}
 .grab{width:40px;height:4px;border-radius:2px;background:#D9DCE1;margin:0 auto 12px}
 .fl{display:flex;align-items:center;gap:10px;padding:12px 0;border-top:1px solid var(--line2);font-size:14px}
@@ -109,7 +110,7 @@ input[type=date].fld{padding:8px 10px;font-size:14px;width:auto}
 .tg.on i{left:21px}
 .sw{width:32px;height:32px;border-radius:50%;border:0;padding:0}
 .sw.on{box-shadow:0 0 0 3px #fff,0 0 0 5px var(--c)}
-.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(132px + env(safe-area-inset-bottom));background:var(--ink);color:#fff;font-size:13px;padding:12px 14px 12px 16px;border-radius:16px;z-index:40;display:flex;align-items:center;gap:12px;max-width:calc(100% - 32px);width:max-content}
+.toast{position:fixed;left:50%;transform:translateX(-50%);top:calc(var(--vvt,0px) + var(--vvh,100dvh) - var(--barh,120px) - 60px);background:var(--ink);color:#fff;font-size:13px;padding:12px 14px 12px 16px;border-radius:16px;z-index:40;display:flex;align-items:center;gap:12px;max-width:calc(100% - 32px);width:max-content}
 .toast button{border:0;background:transparent;color:#9FC4EE;font-weight:700;font-size:13px;padding:0;white-space:nowrap}
 .pal{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
 .pal button{display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 0;border-radius:14px;border:1.5px solid transparent;background:transparent;font-size:12px}
@@ -125,6 +126,9 @@ input[type=date].fld{padding:8px 10px;font-size:14px;width:auto}
 /* iOS: 16px 미만 입력칸을 누르면 화면이 확대되므로 모든 입력칸 16px 이상 */
 input,select,textarea{font-size:16px!important}
 html{-webkit-text-size-adjust:100%}
+/* 키보드가 열리면 탭바는 숨기고 입력칸만 키보드 바로 위에 */
+body.kb .tabs{display:none}
+body.kb .bar{padding-bottom:10px}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 :focus-visible{outline:2px solid var(--deep);outline-offset:2px}
 </style>
@@ -953,6 +957,7 @@ function render() {
   document.getElementById('qf').style.display = (ui.tab === 'plan' || ui.tab === 'me') ? 'none' : '';
   qi.placeholder = ui.tab === 'cal' ? (mdw(ui.calSel || todayS()) + '에 넣을 일 적기') : ui.tab === 'topic' ? ('‘' + topicOf(ui.topicSel).name + '’에 넣을 일 적기') : '그냥 적으세요 · 분류는 알아서 해요';
   renderSheet();
+  fitViewport();
 }
 
 /* ---------- 토스트 ---------- */
@@ -1041,7 +1046,7 @@ function finalizeAdd(res, forcedTopic, baseDate, map, created) {
   var msg = made.length + '개 추가' + (why.length ? ' · ' + why.slice(0, 2).join(', ') : '');
   if (shopN && shopN === made.length) msg = '살 것 ' + shopN + '개 추가' + (res[0].store ? ' · ' + res[0].store : '');
   var acts = [{label: '되돌리기', fn: function () { S = before; commit('되돌렸어요'); }}];
-  if (planCand) acts.unshift({label: '나눌까요?', fn: function () { planNew({title: planCand.title, topic: planCand.topic, due: planCand.due, fromId: planCand.id}); planBuild(); ui.tab = 'plan'; render(); window.scrollTo(0, 0); }});
+  if (planCand) acts.unshift({label: '나눌까요?', fn: function () { planNew({title: planCand.title, topic: planCand.topic, due: planCand.due, fromId: planCand.id}); planBuild(); ui.tab = 'plan'; render(); toTop(); }});
   toast(msg, acts);
 }
 function sheetNewTopic() {
@@ -1094,7 +1099,7 @@ document.addEventListener('click', function (e) {
   if (a === 'nExist') { pendDecide(id); return; }
   if (a === 'nCancel') { pendCancel(); return; }
   if (a === 'close') { closeSheet(); return; }
-  if (a === 'tab') { ui.tab = el.getAttribute('data-tab'); ui.sheet = null; render(); window.scrollTo(0, 0); return; }
+  if (a === 'tab') { ui.tab = el.getAttribute('data-tab'); ui.sheet = null; render(); toTop(); return; }
   if (a === 'tog') {
     t = taskOf(id); if (!t) return; var d = el.getAttribute('data-d');
     if (t.rep) { var i = t.doneDates.indexOf(d); if (i >= 0) t.doneDates.splice(i, 1); else t.doneDates.push(d); }
@@ -1127,8 +1132,8 @@ document.addEventListener('click', function (e) {
   if (a === 'filt') { ui.filt = v; render(); return; }
   if (a === 'tsel') { ui.topicSel = id; ui.showDone = false; render(); return; }
   if (a === 'showDone') { ui.showDone = !ui.showDone; render(); return; }
-  if (a === 'planFor') { planNew({topic: el.getAttribute('data-topic')}); ui.tab = 'plan'; render(); window.scrollTo(0, 0); return; }
-  if (a === 'planFrom') { t = taskOf(id); planNew({title: t.title, topic: t.topic, due: t.due, fromId: t.id}); planBuild(); render(); window.scrollTo(0, 0); return; }
+  if (a === 'planFor') { planNew({topic: el.getAttribute('data-topic')}); ui.tab = 'plan'; render(); toTop(); return; }
+  if (a === 'planFrom') { t = taskOf(id); planNew({title: t.title, topic: t.topic, due: t.due, fromId: t.id}); planBuild(); render(); toTop(); return; }
   if (a === 'pTopic') { ui.plan.topic = id; render(); return; }
   if (a === 'pBuf') { ui.plan.buffer = !ui.plan.buffer; if (ui.plan.steps) planBuild(); render(); return; }
   if (a === 'pCap') { ui.plan.cap = +v; if (ui.plan.steps) planBuild(); render(); return; }
@@ -1144,7 +1149,7 @@ document.addEventListener('click', function (e) {
     });
     if (src) src.date = p.due;
     var cnt = p.steps.length; planNew(); ui.tab = 'today';
-    commit(); toast(cnt + '단계를 날짜별로 넣었어요', [{label: '되돌리기', fn: function () { S = before2; commit(); }}]); window.scrollTo(0, 0); return;
+    commit(); toast(cnt + '단계를 날짜별로 넣었어요', [{label: '되돌리기', fn: function () { S = before2; commit(); }}]); toTop(); return;
   }
   if (a === 'color') { S.settings.color = v; commit(); return; }
   if (a === 'signIn') { signIn(); return; }
@@ -1229,6 +1234,25 @@ document.addEventListener('submit', function (e) {
 });
 document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && ui.sheet) { if (ui.pending) pendCancel(); else closeSheet(); } });
 document.addEventListener('visibilitychange', function () { if (!document.hidden && S) { var r0 = S.roll; rollover(); if (r0 !== S.roll) render(); } });
+
+/* ---------- 화면 높이: 키보드가 올라와도 위 화면은 그대로, 남은 공간만 사용 ---------- */
+function toTop() { var sh = document.querySelector('.shell'); if (sh) sh.scrollTop = 0; }
+function fitViewport() {
+  var vv = window.visualViewport, h = vv ? vv.height : window.innerHeight, t = vv ? vv.offsetTop : 0;
+  var r = document.documentElement.style, bar = document.getElementById('bar');
+  r.setProperty('--vvh', h + 'px'); r.setProperty('--vvt', t + 'px');
+  r.setProperty('--barh', (bar.style.display === 'none' ? 0 : bar.offsetHeight) + 'px');
+}
+if (window.visualViewport) { visualViewport.addEventListener('resize', fitViewport); visualViewport.addEventListener('scroll', fitViewport); }
+window.addEventListener('resize', fitViewport);
+document.addEventListener('focusin', function (e) {
+  if (e.target.closest && e.target.closest('#bar')) { document.body.classList.add('kb'); fitViewport(); setTimeout(fitViewport, 300); }
+});
+document.addEventListener('focusout', function (e) {
+  if (e.target.closest && e.target.closest('#bar')) setTimeout(function () { if (!document.activeElement || !document.activeElement.closest || !document.activeElement.closest('#bar')) { document.body.classList.remove('kb'); window.scrollTo(0, 0); fitViewport(); } }, 50);
+});
+/* iOS가 페이지 전체를 밀어 올리는 것 되돌리기 */
+window.addEventListener('scroll', function () { if (window.scrollY && !document.querySelector('.sheetbg')) window.scrollTo(0, 0); });
 
 /* ---------- 새 버전 알림 ---------- */
 var updSeen = '';
