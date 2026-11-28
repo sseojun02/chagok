@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover,interactive-widget=resizes-content">
 <title>차곡</title>
 <meta name="theme-color" content="#F4F5F7">
-<meta name="app-version" content="1126-f">
+<meta name="app-version" content="1128-a">
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2">
 <link rel="icon" type="image/png" href="icon-192.png?v=2">
 <link rel="manifest" href="manifest.json">
@@ -553,17 +553,20 @@ function itemHtml(t, d, opt) {
   opt = opt || {};
   var done = isDone(t, d), star = isStar(t) && !done;
   var meta = '', red = false;
-  if (t.rep) meta = '↻ ' + repLabel(t.rep);
+  if (opt.overdue) { var lag = diff(t.date, todayS()); meta = lag === 1 ? '어제' : lag + '일 밀림'; red = true; }
+  else if (t.rep) meta = '↻ ' + repLabel(t.rep);
   else if (t.due && !done) { meta = ddayTxt(t.due); red = diff(todayS(), t.due) <= 3; }
   else if (t.post > 0 && !done && d === todayS()) meta = '어제→오늘';
   var subs = [];
   if (opt.showTopic) subs.push(topicOf(t.topic).name);
   if (t.cl.length) subs.push(t.cl.filter(function (c) { return c.d; }).length + '/' + t.cl.length + ' · ' + t.cl.map(function (c) { return (c.d ? '✓' : '') + c.t; }).join(' · '));
   if (opt.showDate && t.date && !t.rep) subs.push(mdw(t.date));
+  if (opt.overdue && t.date) subs.push(t.due ? ddayTxt(t.due) : mdw(t.date) + '에 하려던 일');
   return '<div class="item' + (star ? ' star' : '') + (done ? ' done' : '') + '">' +
     '<button class="ck' + (done ? ' on' : '') + '" data-act="tog" data-id="' + t.id + '" data-d="' + d + '" aria-label="' + (done ? '완료 취소' : '완료') + '">' + CK + '</button>' +
     '<button class="tt" data-act="edit" data-id="' + t.id + '"><span>' + esc(t.title) + '</span>' + (subs.length ? '<small>' + esc(subs.join(' · ')) + '</small>' : '') + '</button>' +
     (meta ? '<span class="meta' + (red ? ' red' : '') + '">' + esc(meta) + '</span>' : '') +
+    (opt.overdue && !done ? '<button class="pill line" style="padding:5px 9px;font-size:11px" data-act="mv" data-id="' + t.id + '" data-v="0">오늘로</button>' : '') +
     '<button class="starbtn" data-act="star" data-id="' + t.id + '" aria-label="중요 표시" aria-pressed="' + star + '">' + starSvg(star) + '</button></div>';
 }
 function sortTasks(list, d) {
@@ -607,9 +610,12 @@ function viewToday() {
     '<button class="btn" data-act="tab" data-tab="plan">' + ico(I.spark, 14) + '계획</button></div>';
   var od = overdue();
   if (od.length) {
-    h += '<div class="tray"><div style="flex:1;min-width:0"><div class="t1">못 끝낸 일 ' + od.length + '개</div><div class="t2">' + esc(od.map(function (t) { return t.title; }).join(' · ')) + '</div></div>' +
-      '<button class="btn" style="background:#fff;color:var(--ink);padding:8px 12px;font-size:12px" data-act="trayToday">오늘로</button>' +
-      '<button class="btn" style="background:transparent;border:1px solid #5F646C;padding:8px 12px;font-size:12px;font-weight:500" data-act="sheet" data-k="tray">다시 정하기</button></div>';
+    var odSorted = od.slice().sort(function (x, y) { return x.date < y.date ? -1 : x.date > y.date ? 1 : x.c - y.c; });
+    h += '<div class="card" style="box-shadow:inset 0 0 0 1.5px #F3D3C8"><div class="ghd"><span class="dot" style="background:#E0613D"></span><b style="white-space:nowrap">밀린 일</b><span class="sub">' + od.length + '개</span>' +
+      '<button class="pill line" style="margin-left:auto;padding:6px 11px" data-act="trayToday">모두 오늘로</button>' +
+      '<button class="starbtn" data-act="odFold" aria-label="' + (ui.odOpen === false ? '펼치기' : '접기') + '" style="color:#9A9EA6">' + ico(ui.odOpen === false ? I.down : I.up, 16) + '</button></div>';
+    if (ui.odOpen !== false) odSorted.forEach(function (t) { h += itemHtml(t, t.date, {overdue: true, showTopic: true}); });
+    h += '</div>';
   }
   var warn = S.tasks.filter(function (t) { return !t.done && !t.rep && t.due && !t.date && diff(td, t.due) <= 7; }).sort(function (a, b) { return a.due < b.due ? -1 : 1; })[0];
   if (warn) h += '<button class="warn" data-act="edit" data-id="' + warn.id + '">' + ico(I.warn, 16) + '<span><b>' + esc(warn.title) + '</b> ' + ddayTxt(warn.due) + ' · 할 날을 정해주세요</span>' + ico(I.next, 16, 2.2) + '</button>';
@@ -1115,6 +1121,7 @@ document.addEventListener('click', function (e) {
     commit(); toast('지웠어요', [{label: '되돌리기', fn: function () { S = before; commit(); }}]); return;
   }
   if (a === 'only') { ui.only = v === '1'; render(); return; }
+  if (a === 'odFold') { ui.odOpen = ui.odOpen === false; render(); return; }
   if (a === 'shopFold') { ui.shopOpen = !ui.shopOpen; render(); return; }
   if (a === 'addIn') { ui.addTopic = el.getAttribute('data-topic'); var qi = document.getElementById('qi'); qi.placeholder = '‘' + topicOf(ui.addTopic).name + '’에 넣을 일 적기'; qi.focus(); return; }
   if (a === 'trayToday') { overdue().forEach(function (x) { x.date = todayS(); x.post = (x.post || 0) + 1; }); commit('오늘로 옮겼어요'); return; }
