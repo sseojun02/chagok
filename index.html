@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover,interactive-widget=resizes-content">
 <title>차곡</title>
 <meta name="theme-color" content="#F4F5F7">
-<meta name="app-version" content="1128-a">
+<meta name="app-version" content="1128-b">
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2">
 <link rel="icon" type="image/png" href="icon-192.png?v=2">
 <link rel="manifest" href="manifest.json">
@@ -21,7 +21,7 @@
 :root{--soft:#EEF4FB;--faint:#B8CBE0;--deep:#5A7DA3;--ink:#16181D;--ink2:#3A3F4A;--muted:#5F6673;--line:#E9EAEE;--line2:#F0F1F4;--bg:#F4F5F7}
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none;background:var(--bg)}
-body{font-family:'Noto Sans KR',Inter,system-ui,sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
+body{word-break:keep-all;overflow-wrap:break-word;font-family:'Noto Sans KR',Inter,system-ui,sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
 button,input,select,textarea{font-family:inherit;color:inherit;font-size:inherit}
 button{cursor:pointer}
 .num{font-family:Inter,'Noto Sans KR',sans-serif}
@@ -43,7 +43,9 @@ button{cursor:pointer}
 .btn.big{width:100%;justify-content:center;border-radius:16px;padding:15px;font-size:15px}
 .iconbtn{width:30px;height:30px;border-radius:50%;border:0;background:#F2F3F5;display:flex;align-items:center;justify-content:center;padding:0;flex:none}
 .ghd{display:flex;align-items:center;gap:8px;padding:0 0 4px}
-.ghd b{font-size:15px;font-weight:800}
+.ghd b{font-size:15px;font-weight:800;white-space:nowrap}
+.ghd .sub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.meta,.pill,.btn,.linkbtn{word-break:keep-all}
 .item{display:flex;align-items:center;gap:10px;border-radius:12px;padding:8px;margin:0 -6px}
 .item.star{background:var(--soft)}
 .item .tt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;text-align:left;border:0;background:transparent;padding:0}
@@ -611,10 +613,12 @@ function viewToday() {
   var od = overdue();
   if (od.length) {
     var odSorted = od.slice().sort(function (x, y) { return x.date < y.date ? -1 : x.date > y.date ? 1 : x.c - y.c; });
-    h += '<div class="card" style="box-shadow:inset 0 0 0 1.5px #F3D3C8"><div class="ghd"><span class="dot" style="background:#E0613D"></span><b style="white-space:nowrap">밀린 일</b><span class="sub">' + od.length + '개</span>' +
-      '<button class="pill line" style="margin-left:auto;padding:6px 11px" data-act="trayToday">모두 오늘로</button>' +
-      '<button class="starbtn" data-act="odFold" aria-label="' + (ui.odOpen === false ? '펼치기' : '접기') + '" style="color:#9A9EA6">' + ico(ui.odOpen === false ? I.down : I.up, 16) + '</button></div>';
-    if (ui.odOpen !== false) odSorted.forEach(function (t) { h += itemHtml(t, t.date, {overdue: true, showTopic: true}); });
+    var odOpen = ui.odOpen !== false;
+    h += '<div class="card" style="box-shadow:inset 0 0 0 1.5px #F3D3C8"><div class="ghd">' +
+      '<button data-act="odFold" aria-expanded="' + odOpen + '" style="flex:1;min-width:0;display:flex;align-items:center;gap:8px;border:0;background:transparent;padding:0;text-align:left;color:inherit"><span class="dot" style="background:#E0613D"></span><b>밀린 일</b><span class="sub">' + od.length + '개</span>' +
+      '<span class="sub" style="margin-left:auto;display:flex;align-items:center;gap:2px;color:#6B7079">' + (odOpen ? '접기' : '펼치기') + ico(odOpen ? I.up : I.down, 14) + '</span></button>' +
+      '<button class="pill line" style="padding:6px 11px;margin-left:6px" data-act="trayToday">모두 오늘로</button></div>';
+    if (odOpen) odSorted.forEach(function (t) { h += itemHtml(t, t.date, {overdue: true, showTopic: true}); });
     h += '</div>';
   }
   var warn = S.tasks.filter(function (t) { return !t.done && !t.rep && t.due && !t.date && diff(td, t.due) <= 7; }).sort(function (a, b) { return a.due < b.due ? -1 : 1; })[0];
@@ -1121,7 +1125,7 @@ document.addEventListener('click', function (e) {
     commit(); toast('지웠어요', [{label: '되돌리기', fn: function () { S = before; commit(); }}]); return;
   }
   if (a === 'only') { ui.only = v === '1'; render(); return; }
-  if (a === 'odFold') { ui.odOpen = ui.odOpen === false; render(); return; }
+  if (a === 'odFold') { ui.odOpen = ui.odOpen === false; try { localStorage.setItem('chagok-odOpen', ui.odOpen ? '1' : '0'); } catch (x) {} render(); return; }
   if (a === 'shopFold') { ui.shopOpen = !ui.shopOpen; render(); return; }
   if (a === 'addIn') { ui.addTopic = el.getAttribute('data-topic'); var qi = document.getElementById('qi'); qi.placeholder = '‘' + topicOf(ui.addTopic).name + '’에 넣을 일 적기'; qi.focus(); return; }
   if (a === 'trayToday') { overdue().forEach(function (x) { x.date = todayS(); x.post = (x.post || 0) + 1; }); commit('오늘로 옮겼어요'); return; }
@@ -1304,6 +1308,7 @@ document.addEventListener('visibilitychange', function () { if (!document.hidden
 setTimeout(checkUpdate, 4000);
 
 /* ---------- 시작 ---------- */
+try { if (localStorage.getItem('chagok-odOpen') === '0') ui.odOpen = false; } catch (x) {}
 S = migrate(lsGet() || defState());
 rollover();
 render();
